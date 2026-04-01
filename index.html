@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>The Harbour Village | Fish-Oid — Captain Barnacle's Marine World</title>
+    <meta name="description" content="Captain Barnacle's Harbour Village. Marine biology meets fishing wisdom. Identify fish, learn the sea, ask anything. Free forever.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Caveat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Kill Tailwind CDN dev overlay */
+        #__tailwind_container, .tailwind-indicator { display: none !important; }
+
+        :root {
+            --deep: #0c4a6e;
+            --mid: #0e7490;
+            --accent: #06b6d4;
+            --highlight: #22d3ee;
+            --gold: #fbbf24;
+            --abyss: #082f49;
+            --foam: #ecfeff;
+            --sand: #fef3c7;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; font-size: 18px; }
+        body { font-family: 'Outfit', sans-serif; background: var(--abyss); color: #e2e8f0; }
+        .font-hand { font-family: 'Caveat', cursive; }
+
+        /* Accessibility: override Tailwind small text */
+        .text-xs { font-size: 0.8rem !important; }
+        .text-sm { font-size: 0.9rem !important; }
+
+        /* Wave animation */
+        .wave-bg {
+            background: linear-gradient(180deg, #082f49 0%, #0c4a6e 40%, #0e7490 70%, #155e75 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .wave-bg::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 200%;
+            height: 40px;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 1200 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 20 Q150 0 300 20 T600 20 T900 20 T1200 20 V40 H0 Z' fill='%23082f49'/%3E%3C/svg%3E") repeat-x;
+            animation: waves 8s linear infinite;
+        }
+        @keyframes waves { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        /* Harbour cards */
+        .harbour-card {
+            background: linear-gradient(135deg, rgba(14,116,144,0.12) 0%, rgba(6,182,212,0.06) 100%);
+            border: 1px solid rgba(6,182,212,0.2);
+            border-left: 4px solid var(--accent);
+            transition: all 0.3s;
+        }
+        .harbour-card:hover {
+            border-color: var(--highlight);
+            background: linear-gradient(135deg, rgba(14,116,144,0.2) 0%, rgba(6,182,212,0.1) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(6,182,212,0.15);
+        }
+
+        /* Upload boxes */
+        .upload-box {
+            background: rgba(6,182,212,0.08);
+            border: 2px dashed rgba(6,182,212,0.3);
+            border-radius: 16px;
+            padding: 48px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 48px;
+        }
+        .upload-box:hover {
+            background: rgba(6,182,212,0.15);
+            border-color: var(--accent);
+        }
+
+        /* Tabs */
+        .tab-active {
+            background: var(--mid);
+            color: white;
+            font-weight: bold;
+        }
+        .tab-inactive {
+            background: transparent;
+            color: var(--accent);
+            font-weight: 600;
+            border: 1px solid rgba(6,182,212,0.3);
+        }
+        .tab-inactive:hover { background: rgba(6,182,212,0.1); }
+
+        /* Learn tabs */
+        .learn-tab-active {
+            background: var(--mid);
+            color: white;
+            font-weight: bold;
+            border-radius: 12px;
+        }
+        .learn-tab-inactive {
+            background: transparent;
+            color: var(--highlight);
+            font-weight: 600;
+            border-radius: 12px;
+        }
+        .learn-tab-inactive:hover { background: rgba(6,182,212,0.1); }
+
+        /* Chatbot */
+        .chat-container {
+            background: var(--abyss);
+            border: 1px solid rgba(6,182,212,0.3);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .chat-messages {
+            height: 400px;
+            overflow-y: auto;
+            padding: 16px;
+            scroll-behavior: smooth;
+        }
+        .chat-messages::-webkit-scrollbar { width: 6px; }
+        .chat-messages::-webkit-scrollbar-track { background: transparent; }
+        .chat-messages::-webkit-scrollbar-thumb { background: rgba(6,182,212,0.3); border-radius: 3px; }
+        .msg-barnacle {
+            background: linear-gradient(135deg, #0c4a6e, #164e63);
+            border-radius: 16px 16px 16px 4px;
+            max-width: 85%;
+        }
+        .msg-user {
+            background: linear-gradient(135deg, #0e7490, #0891b2);
+            border-radius: 16px 16px 4px 16px;
+            max-width: 85%;
+            margin-left: auto;
+        }
+
+        /* Q&A Accordion */
+        .qa-item { border-bottom: 1px solid rgba(6,182,212,0.15); }
+        .qa-question { cursor: pointer; transition: all 0.2s; min-height: 48px; display: flex; align-items: center; }
+        .qa-question:hover { color: var(--highlight); }
+        .qa-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+        }
+        .qa-answer.open {
+            max-height: 600px;
+            padding-bottom: 16px;
+        }
+
+        /* Typing dots */
+        .typing-dots span {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: bounce 1.4s infinite;
+        }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+        }
+
+        /* Bubble float animation for hero */
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(34,211,238,0.08);
+            animation: floatUp linear infinite;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 0.6; }
+            100% { transform: translateY(-300px) scale(0.3); opacity: 0; }
+        }
+
+        /* Section reveal */
+        .section-fade { opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
+        .section-fade.visible { opacity: 1; transform: translateY(0); }
+
+        /* Dot nav */
+        .dot-nav {
+            position: fixed;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 40;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .dot-nav a {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            background: rgba(6,182,212,0.3);
+            transition: all 0.3s;
+            display: block;
+        }
+        .dot-nav a.active {
+            background: var(--highlight);
+            transform: scale(1.3);
+        }
+        .dot-nav a:hover { background: var(--accent); }
+
+        /* Touch targets */
+        button, a, .upload-box { min-height: 48px; }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .chat-messages { height: 300px; }
+            .dot-nav { display: none; }
+            html { font-size: 16px; }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+        :focus-visible { outline: 2px solid var(--highlight); outline-offset: 2px; }
+    </style>
+</head>
+<body>
+
+    <!-- Skip to content -->
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-cyan-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
+
+    <!-- Dot navigation -->
+    <nav class="dot-nav" aria-label="Section navigation">
+        <a href="#pageHome" title="Home" class="active"></a>
+        <a href="#pageLearn" title="Learn"></a>
+        <a href="#pageQA" title="Q&A"></a>
+        <a href="#pageBarnacle" title="Ask Captain Barnacle"></a>
+        <a href="#pageGear" title="Gear"></a>
+        <a href="#pageVillage" title="Village"></a>
+    </nav>
+
+    <!-- AGE VERIFICATION MODAL -->
+    <div id="ageModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div class="rounded-3xl p-8 max-w-md border border-cyan-800/30" style="background:#0c4a6e;">
+            <div class="text-center text-4xl mb-3">🐟</div>
+            <h2 class="text-2xl font-bold text-white mb-4 text-center">Welcome to The Harbour Village</h2>
+            <p class="text-cyan-200 mb-6 text-center">This is an adult-focused educational community. Kids are welcome with parent permission.</p>
+            <div class="space-y-3">
+                <button onclick="confirmAge('adult')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition">
+                    I'm 18+ (Continue)
+                </button>
+                <button onclick="confirmAge('parent')" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 rounded-xl transition">
+                    I'm a Parent/Guardian
+                </button>
+                <button onclick="confirmAge('under18')" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl transition">
+                    I'm Under 18 (Need Parent OK)
+                </button>
+            </div>
+            <p class="text-xs text-cyan-500 mt-6 text-center">
+                We're building a safe space for skill-sharing across generations. No social media BS. Just real humans helping real humans.
+            </p>
+        </div>
+    </div>
+
+    <!-- HEADER / HERO -->
+    <header id="pageHome" class="wave-bg text-center py-16 px-4 relative min-h-[50vh] flex items-center justify-center">
+        <!-- Bubbles -->
+        <div class="bubble" style="width:20px;height:20px;left:10%;bottom:20%;animation-duration:6s;"></div>
+        <div class="bubble" style="width:14px;height:14px;left:30%;bottom:10%;animation-duration:8s;animation-delay:1s;"></div>
+        <div class="bubble" style="width:18px;height:18px;left:60%;bottom:15%;animation-duration:7s;animation-delay:2s;"></div>
+        <div class="bubble" style="width:12px;height:12px;left:80%;bottom:25%;animation-duration:9s;animation-delay:0.5s;"></div>
+        <div class="bubble" style="width:16px;height:16px;left:45%;bottom:5%;animation-duration:6.5s;animation-delay:3s;"></div>
+
+        <div class="max-w-3xl mx-auto relative z-10">
+            <div class="text-7xl mb-4">🐟</div>
+            <h1 class="text-5xl md:text-7xl font-black text-white mb-2 tracking-tight">Fish-Oid</h1>
+            <p class="text-xl text-cyan-300 font-semibold mb-1">The Harbour Village</p>
+            <p class="font-hand text-2xl text-amber-300">"Every fish tells a story, if you know how to listen."</p>
+            <p class="text-cyan-400 text-sm mt-4 max-w-lg mx-auto">A FeelFamous Village for anglers, beachcombers, marine life enthusiasts, and anyone who's ever wondered what's swimming beneath the surface.</p>
+
+            <div class="mt-8 flex flex-wrap gap-3 justify-center">
+                <a href="#pageLearn" class="bg-cyan-700 hover:bg-cyan-800 text-white px-5 py-3 rounded-xl font-semibold transition text-sm">🐠 Learn</a>
+                <a href="#pageBarnacle" class="bg-teal-700 hover:bg-teal-800 text-white px-5 py-3 rounded-xl font-semibold transition text-sm">⚓ Ask the Captain</a>
+                <a href="https://buymeacoffee.com/chrispteemagician" target="_blank" class="bg-amber-500 hover:bg-amber-600 text-black px-5 py-3 rounded-xl font-bold transition text-sm">🐚 Buy a Cuppa</a>
+                <a href="https://buy.stripe.com/aFabJ1fJ10Vw6zT89NfrW00" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold transition text-sm">🪝 Join the Family</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- STICKY NAV -->
+    <nav class="bg-[#082f49] border-b border-cyan-900/50 sticky top-0 z-40" aria-label="Main navigation">
+        <div class="max-w-4xl mx-auto px-4 flex gap-1 overflow-x-auto py-2 text-sm">
+            <a href="#pageHome" class="whitespace-nowrap px-3 py-2 rounded-lg bg-cyan-600/20 text-cyan-300 hover:bg-cyan-600/30 transition font-semibold">🐟 Home</a>
+            <a href="#pageLearn" class="whitespace-nowrap px-3 py-2 rounded-lg text-cyan-400 hover:bg-cyan-600/20 transition">🌊 Learn</a>
+            <a href="#pageQA" class="whitespace-nowrap px-3 py-2 rounded-lg text-cyan-400 hover:bg-cyan-600/20 transition">🐙 Q&A</a>
+            <a href="#pageBarnacle" class="whitespace-nowrap px-3 py-2 rounded-lg text-amber-400 hover:bg-amber-600/20 transition font-semibold">⚓ Captain</a>
+            <a href="#pageGear" class="whitespace-nowrap px-3 py-2 rounded-lg text-cyan-400 hover:bg-cyan-600/20 transition">🪝 Gear</a>
+            <a href="#pageVillage" class="whitespace-nowrap px-3 py-2 rounded-lg text-cyan-400 hover:bg-cyan-600/20 transition">🏘️ Village</a>
+        </div>
+    </nav>
+
+    <!-- FREE BANNER -->
+    <div class="bg-cyan-900/30 text-center py-3 px-4 border-b border-cyan-900/30">
+        <p class="text-sm text-cyan-200">
+            <strong>Free forever.</strong> Identify, learn, ask. Join the
+            <a href="https://feelfamous.com" class="text-amber-400 font-bold hover:text-amber-300 transition">FeelFamous Family</a>
+            to unlock <span class="bg-amber-500 text-black px-2 py-0.5 rounded font-bold text-xs">PRO</span> features across ALL -Oid apps.
+        </p>
+    </div>
+
+    <!-- USER STATUS BAR -->
+    <div id="userStatusBar" class="hidden bg-gradient-to-r from-amber-500 to-cyan-500 text-black py-2 px-4">
+        <div class="max-w-4xl mx-auto flex items-center justify-between text-sm">
+            <div class="font-bold">
+                <span id="userBadge"></span> <span id="userName"></span> - <span id="userKudos">0</span> Kudos
+            </div>
+            <button onclick="signOut()" class="text-xs underline">Sign out</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main id="main" class="max-w-4xl mx-auto px-4 py-8">
+
+        <!-- HARBOUR MASTER'S OFFICE (Welcome) -->
+        <section class="section-fade mb-12">
+            <div class="bg-gradient-to-br from-cyan-900/40 to-teal-900/20 rounded-2xl p-8 border border-cyan-800/30">
+                <div class="flex items-start gap-4">
+                    <div class="text-5xl">⚓</div>
+                    <div>
+                        <h2 class="text-2xl font-black text-white mb-2">Harbour Master's Office</h2>
+                        <p class="text-cyan-200 leading-relaxed mb-4">
+                            Now then! I'm Captain Barnacle -- been studying and fishing the seas for 30-odd years out of Whitby. Marine biologist by trade, fisherman by heart, and I've got more salt in my beard than most folk have in their cupboards. Sprat, my Jack Russell, keeps watch while I work.
+                        </p>
+                        <p class="text-cyan-300 text-sm">
+                            Whether you've caught something strange, found something on the beach, or just want to know what's swimming under your feet -- ask away. I've got a flask of tea that's still warm and a lifetime of stories. No question too daft, no fish too small.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI IDENTIFIER -->
+        <section class="section-fade mb-12">
+            <h2 class="text-3xl font-black text-white mb-2">🐟 Fish-Oid AI</h2>
+            <p class="text-cyan-400 mb-6">Snap a photo. The Captain identifies it. Fish, marine life, tackle, gear -- anything from the sea.</p>
+
+            <!-- Identify / Roast Tabs -->
+            <div class="flex gap-2 mb-6">
+                <button id="identifyTab" onclick="switchTab('identify')" class="flex-1 py-3 rounded-xl tab-active transition font-semibold">
+                    🐟 Identify
+                </button>
+                <button id="roastTab" onclick="switchTab('roast')" class="flex-1 py-3 rounded-xl tab-inactive transition font-semibold">
+                    🦀 Roast My Catch
+                </button>
+            </div>
+
+            <!-- Identify view -->
+            <div id="identifyView">
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="upload-box" onclick="document.getElementById('cameraInput').click()">
+                        <div class="text-5xl mb-3">📷</div>
+                        <p class="font-bold text-white">Camera</p>
+                        <p class="text-cyan-400 text-xs mt-1">Take a photo</p>
+                    </div>
+                    <div class="upload-box" onclick="document.getElementById('galleryInput').click()">
+                        <div class="text-5xl mb-3">🖼️</div>
+                        <p class="font-bold text-white">Gallery</p>
+                        <p class="text-cyan-400 text-xs mt-1">Choose a photo</p>
+                    </div>
+                </div>
+                <p class="text-center text-cyan-500 text-sm mb-6">Fish, shells, tackle, marine life -- the Captain's seen it all.</p>
+                <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleUpload('identify', this)">
+                <input type="file" id="galleryInput" accept="image/*" class="hidden" onchange="handleUpload('identify', this)">
+            </div>
+
+            <!-- Roast view -->
+            <div id="roastView" class="hidden">
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="upload-box" onclick="document.getElementById('roastCamera').click()">
+                        <div class="text-5xl mb-3">📷</div>
+                        <p class="font-bold text-white">Camera</p>
+                    </div>
+                    <div class="upload-box" onclick="document.getElementById('roastGallery').click()">
+                        <div class="text-5xl mb-3">🖼️</div>
+                        <p class="font-bold text-white">Gallery</p>
+                    </div>
+                </div>
+                <p class="text-center text-cyan-500 text-sm">Show me your catch or your gear. Prepare for honest Yorkshire opinions.</p>
+                <input type="file" id="roastCamera" accept="image/*" capture="environment" class="hidden" onchange="handleUpload('roast', this)">
+                <input type="file" id="roastGallery" accept="image/*" class="hidden" onchange="handleUpload('roast', this)">
+            </div>
+
+            <!-- Loading state -->
+            <div id="loadingView" class="hidden text-center py-12">
+                <div class="animate-spin text-7xl mb-4">🐟</div>
+                <p id="loadingTitle" class="text-2xl font-bold text-cyan-400">Casting the line...</p>
+                <p id="loadingMessage" class="text-cyan-500 mt-2">Checking the tide tables...</p>
+                <p class="text-cyan-700 text-sm mt-4 italic">"Patience is a virtue -- especially when the fish aren't biting."</p>
+                <p class="text-cyan-700 text-xs mt-2">This can take up to 30 seconds for an accurate result</p>
+                <div id="loadingTimer" class="text-cyan-400 font-mono text-lg mt-3"></div>
+            </div>
+
+            <!-- Result view -->
+            <div id="resultView" class="hidden">
+                <div class="rounded-3xl p-8 text-white shadow-2xl mb-6" style="background: linear-gradient(135deg, #0e7490 0%, #0891b2 100%);">
+                    <img id="resultImage" src="" alt="Result" class="w-full rounded-xl mb-6 shadow-xl">
+                    <h3 id="resultTitle" class="text-3xl font-extrabold mb-3"></h3>
+                    <div id="resultDescription" class="text-lg opacity-90 mb-4 whitespace-pre-wrap"></div>
+                    <p id="resultPrice" class="text-yellow-300 font-bold text-xl hidden"></p>
+                    <div id="amazonLink" class="hidden mt-4">
+                        <a id="amazonBtn" href="" target="_blank" class="block text-center bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 px-6 rounded-xl transition">
+                            🪝 Find on Amazon
+                        </a>
+                    </div>
+                    <p id="resultAttribution" class="text-sm opacity-75 mt-4"></p>
+                </div>
+
+                <div class="grid grid-cols-4 gap-3 mb-6">
+                    <button onclick="downloadResult()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition text-sm">Save</button>
+                    <button onclick="shareResult()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl transition text-sm">Share</button>
+                    <a href="https://www.spicylister.com" target="_blank" class="bg-red-500 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition text-sm text-center flex items-center justify-center">Sell</a>
+                    <button onclick="resetToHome()" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 rounded-xl transition text-sm">Again</button>
+                </div>
+
+                <!-- Sign in prompt -->
+                <div id="signInPrompt" class="bg-[#082f49] border-2 border-cyan-700 rounded-2xl p-6 text-center">
+                    <p class="text-cyan-200 font-semibold mb-4">Sign in to earn kudos, track your catches, and unlock village features!</p>
+                    <div id="authForm">
+                        <input type="email" id="emailInput" placeholder="your@email.com" class="w-full px-4 py-3 bg-[#0c4a6e] border-2 border-cyan-800 rounded-xl mb-3 text-center text-white placeholder-cyan-600 focus:border-cyan-400 focus:outline-none">
+                        <input type="password" id="passwordInput" placeholder="Password (min 6 chars)" class="w-full px-4 py-3 bg-[#0c4a6e] border-2 border-cyan-800 rounded-xl mb-3 text-center text-white placeholder-cyan-600 focus:border-cyan-400 focus:outline-none">
+                        <button onclick="signUpOrIn('emailInput','passwordInput','authForm','authSuccess')" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-6 rounded-xl transition w-full">
+                            Sign In / Sign Up
+                        </button>
+                        <p class="text-xs text-cyan-500 mt-2">New? This creates your account. Returning? Just sign in.</p>
+                    </div>
+                    <div id="authSuccess" class="hidden p-4 rounded-xl" style="background:rgba(22,163,74,0.15)">
+                        <p class="font-bold text-green-400">Welcome aboard, shipmate!</p>
+                        <p class="text-sm mt-1 text-cyan-300">You're in the village now.</p>
+                    </div>
+                    <p class="text-xs text-cyan-600 mt-3">Safe, secure, no third parties.</p>
+                </div>
+
+                <!-- Kudos earned -->
+                <div id="kudosEarned" class="hidden bg-amber-900/20 border-2 border-amber-500 rounded-2xl p-6 text-center mt-4">
+                    <p class="text-2xl font-bold text-white mb-2">+10 Kudos Earned! 🐟</p>
+                    <p class="text-sm text-cyan-300">Share your QR code to earn even more!</p>
+                </div>
+            </div>
+
+            <!-- Village Broadcast -->
+            <div id="broadcastSection" class="hidden mt-6">
+                <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: white; border-radius: 16px; overflow: hidden; max-width: 320px; margin: 0 auto;">
+                    <div id="emergencyBanner" class="hidden bg-red-600 text-white text-center py-2 font-bold text-sm">EMERGENCY BROADCAST</div>
+                    <div class="p-3">
+                        <p class="font-bold text-xs mb-2 opacity-80" id="broadcastTitle">Village Broadcast</p>
+                        <div class="relative" style="padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 10px;">
+                            <iframe id="broadcastVideo" src="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-cyan-900/20 rounded-2xl border border-cyan-800/30 p-6 mt-8">
+                <h3 class="font-bold text-white mb-4">🐠 Recent Villagers</h3>
+                <div id="activityList" class="space-y-2 text-sm text-cyan-300">
+                    <p class="text-center text-cyan-600">Loading...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEARN SECTION -->
+        <section id="pageLearn" class="section-fade mb-12">
+            <h2 class="text-3xl font-black text-white mb-2">🌊 Learn the Tides</h2>
+            <p class="text-cyan-400 mb-6">Captain Barnacle's field notes. No jargon without translation.</p>
+
+            <!-- Learn Tabs -->
+            <div class="flex gap-2 mb-6 flex-wrap">
+                <button onclick="switchLearnTab('fishid')" id="learnTab1" class="learn-tab-active px-4 py-2 transition text-sm">🐟 Fish ID Tips</button>
+                <button onclick="switchLearnTab('basics')" id="learnTab2" class="learn-tab-inactive px-4 py-2 transition text-sm">⚓ Fishing Basics</button>
+                <button onclick="switchLearnTab('conservation')" id="learnTab3" class="learn-tab-inactive px-4 py-2 transition text-sm">🌊 Conservation</button>
+            </div>
+
+            <!-- Fish ID Tips -->
+            <div id="learnFishid">
+                <h3 class="text-xl font-bold text-amber-400 mb-4">🐟 How to Identify a Fish</h3>
+                <p class="text-cyan-200 text-sm mb-4">Captain Barnacle's quick-reference guide. Look at these features in order:</p>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                    <div class="bg-cyan-900/30 rounded-lg p-4 border border-cyan-800/30">
+                        <p class="font-bold text-white">Body Shape</p>
+                        <p class="text-cyan-300 text-sm">Flat? Round? Torpedo? Eel-like? Shape tells you family.</p>
+                    </div>
+                    <div class="bg-cyan-900/30 rounded-lg p-4 border border-cyan-800/30">
+                        <p class="font-bold text-white">Fin Position</p>
+                        <p class="text-cyan-300 text-sm">Dorsal, pectoral, pelvic -- where they sit matters.</p>
+                    </div>
+                    <div class="bg-cyan-900/30 rounded-lg p-4 border border-cyan-800/30">
+                        <p class="font-bold text-white">Scale Pattern</p>
+                        <p class="text-cyan-300 text-sm">Smooth, rough, armoured, or none at all.</p>
+                    </div>
+                    <div class="bg-cyan-900/30 rounded-lg p-4 border border-cyan-800/30">
+                        <p class="font-bold text-white">Colour & Markings</p>
+                        <p class="text-cyan-300 text-sm">Spots, stripes, bars. Colour changes with freshness.</p>
+                    </div>
+                    <div class="bg-cyan-900/30 rounded-lg p-4 border border-cyan-800/30">
+                        <p class="font-bold text-white">Mouth & Teeth</p>
+                        <p class="text-cyan-300 text-sm">Top feeder? Bottom feeder? The mouth tells the story.</p>
+                    </div>
+                    <div class="bg-cyan-900/30 rounded-lg p-4 border border-cyan-800/30">
+                        <p class="font-bold text-white">Habitat</p>
+                        <p class="text-cyan-300 text-sm">Where you found it narrows it right down.</p>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-cyan-900/40 to-teal-900/20 rounded-xl p-6 border border-cyan-800/30">
+                    <h4 class="font-bold text-white mb-3">Common UK Fish -- Quick Reference</h4>
+                    <div class="grid md:grid-cols-2 gap-3 text-sm">
+                        <div class="text-cyan-200"><strong class="text-white">Mackerel</strong> -- Blue-green tiger stripes. Torpedo shaped. Found in shoals near the surface.</div>
+                        <div class="text-cyan-200"><strong class="text-white">Bass (Sea)</strong> -- Silver, spiny dorsal fin. The prize of shore fishing. Min size 42cm to keep.</div>
+                        <div class="text-cyan-200"><strong class="text-white">Cod</strong> -- Mottled brown/green. Barbel under chin. Deep water but comes inshore winter.</div>
+                        <div class="text-cyan-200"><strong class="text-white">Plaice</strong> -- Flat, brown with orange/red spots. Both eyes on same side. Sandy bottoms.</div>
+                        <div class="text-cyan-200"><strong class="text-white">Pollack</strong> -- Dark back, golden flanks. No barbel (unlike cod). Over rocky ground.</div>
+                        <div class="text-cyan-200"><strong class="text-white">Wrasse (Ballan)</strong> -- Chunky, colourful (green/brown/red). Thick lips. Rocky reefs.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fishing Basics -->
+            <div id="learnBasics" class="hidden">
+                <h3 class="text-xl font-bold text-amber-400 mb-4">⚓ Getting Started Fishing</h3>
+
+                <div class="space-y-4">
+                    <div class="bg-cyan-900/30 rounded-xl p-6 border border-cyan-800/30">
+                        <h4 class="font-bold text-white mb-2">Shore Fishing -- The Best Way to Start</h4>
+                        <p class="text-cyan-200 text-sm mb-3">You don't need a boat. A decent rod, some rigs, bait, and a stretch of coast is all you need. Pier fishing is brilliant for beginners -- the fish come to you.</p>
+                        <p class="text-cyan-300 text-sm"><strong>Essential kit:</strong> 12ft beachcaster rod, fixed spool reel loaded with 15lb line, selection of hooks (sizes 1-4/0), weights (3-6oz), bait (ragworm, lugworm, mackerel strip).</p>
+                    </div>
+
+                    <div class="bg-cyan-900/30 rounded-xl p-6 border border-cyan-800/30">
+                        <h4 class="font-bold text-white mb-2">Boat Fishing -- Next Level</h4>
+                        <p class="text-cyan-200 text-sm mb-3">Charter boats are the smart way in. Skip buys, maintenance, mooring fees. A day charter from Whitby runs about 40-60 quid. You'll learn more in one trip than a month on YouTube.</p>
+                        <p class="text-cyan-300 text-sm"><strong>What to bring:</strong> Warm layers (it's always colder than you think), waterproofs, food, sea sickness tablets (take them the night before!), and a good attitude.</p>
+                    </div>
+
+                    <div class="bg-cyan-900/30 rounded-xl p-6 border border-cyan-800/30">
+                        <h4 class="font-bold text-white mb-2">Tackle Basics</h4>
+                        <div class="grid md:grid-cols-2 gap-3 text-sm text-cyan-200">
+                            <div><strong class="text-white">Rod:</strong> Match to your fishing. Beach = 12ft. Boat = 7ft. Lure = 8-9ft. Don't spend a fortune on your first.</div>
+                            <div><strong class="text-white">Reel:</strong> Fixed spool for shore, multiplier for boat (once you've learned). Start simple.</div>
+                            <div><strong class="text-white">Line:</strong> Mono for beginners, braid for distance casting. 15lb is a good all-rounder.</div>
+                            <div><strong class="text-white">Hooks:</strong> Circle hooks are kinder to fish (easier unhooking). Carry sizes 1 through 4/0.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conservation -->
+            <div id="learnConservation" class="hidden">
+                <h3 class="text-xl font-bold text-red-400 mb-4">🌊 Conservation Always Matters</h3>
+
+                <div class="bg-red-900/20 rounded-xl p-6 border border-red-800/30 mb-4">
+                    <p class="text-white font-bold mb-3">The Captain's Code: Take Only What You Need</p>
+                    <p class="text-cyan-200 text-sm mb-4">I've spent 30 years studying marine ecosystems. The sea gives us everything -- food, livelihood, peace of mind. We owe it respect in return. Every fish you put back is one that might breed. Every piece of litter you pick up saves a life.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="bg-cyan-900/30 rounded-xl p-6 border border-cyan-800/30">
+                        <h4 class="font-bold text-white mb-2">Sustainable Fishing</h4>
+                        <div class="text-cyan-200 text-sm space-y-2">
+                            <p>-- Only keep what you'll eat. If in doubt, put it back.</p>
+                            <p>-- Check minimum landing sizes (they exist for a reason).</p>
+                            <p>-- Use barbless or circle hooks for easier release.</p>
+                            <p>-- Wet your hands before handling fish -- protects their slime coat.</p>
+                            <p>-- Take all litter home. All of it. Including other people's.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-cyan-900/30 rounded-xl p-6 border border-cyan-800/30">
+                        <h4 class="font-bold text-white mb-2">Protected Species & Catch Limits</h4>
+                        <div class="text-cyan-200 text-sm space-y-2">
+                            <p>-- <strong class="text-white">Bass:</strong> Min 42cm. Check current bag limits (they change yearly).</p>
+                            <p>-- <strong class="text-white">Tope & Rays:</strong> Many species catch-and-release only.</p>
+                            <p>-- <strong class="text-white">Lobster & Crab:</strong> Minimum sizes vary by region. V-notched hens MUST go back.</p>
+                            <p>-- <strong class="text-white">Seahorses:</strong> Fully protected. Never remove from habitat.</p>
+                            <p>-- Always check <a href="https://www.gov.uk/freshwater-rod-fishing-rules" target="_blank" class="text-amber-400 hover:text-amber-300 underline">current regulations</a> before you go.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-cyan-900/30 rounded-xl p-6 border border-cyan-800/30">
+                        <h4 class="font-bold text-white mb-2">Ocean Health</h4>
+                        <div class="text-cyan-200 text-sm space-y-2">
+                            <p>-- Support marine conservation zones (MCZs). They work.</p>
+                            <p>-- Report unusual catches or strandings to your local Marine Wildlife Rescue.</p>
+                            <p>-- If you see illegal netting or potting, report to the IFCA.</p>
+                            <p>-- Join a beach clean. Even 20 minutes makes a difference.</p>
+                            <p>-- Buy sustainably sourced fish. Check the <a href="https://www.mcsuk.org/goodfishguide/" target="_blank" class="text-amber-400 hover:text-amber-300 underline">Good Fish Guide</a>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Q&A ACCORDION -->
+        <section id="pageQA" class="section-fade mb-12">
+            <h2 class="text-3xl font-black text-white mb-1">🐙 No Daft Questions</h2>
+            <p class="font-hand text-xl text-amber-300 mb-6">"If Sprat doesn't know, I probably do." -- Captain Barnacle</p>
+
+            <div class="bg-cyan-900/20 rounded-2xl border border-cyan-800/30 overflow-hidden">
+                <div class="qa-item p-5" onclick="toggleQA(this)">
+                    <div class="qa-question justify-between">
+                        <p class="font-bold text-white">What's the best fish for beginners to catch?</p>
+                        <span class="text-cyan-400 text-xl ml-2">+</span>
+                    </div>
+                    <div class="qa-answer text-cyan-200 text-sm pt-3">Mackerel. Hands down. They're abundant from May to October, they fight like champions for their size, they're delicious, and you can catch them from a pier with a simple feather rig and no bait at all. Chuck a set of feathers out, let them sink, and jig them back. You'll feel the hits like electric shocks. Once you've caught a string of mackerel on a summer evening, you're hooked for life -- pardon the pun. A basic <a href="https://www.amazon.co.uk/s?k=mackerel+feather+rig+fishing&tag=chrisptee-21" target="_blank" class="text-amber-400 hover:text-amber-300 underline">mackerel feather set</a> costs about two quid.</div>
+                </div>
+
+                <div class="qa-item p-5" onclick="toggleQA(this)">
+                    <div class="qa-question justify-between">
+                        <p class="font-bold text-white">How do I identify what I've caught?</p>
+                        <span class="text-cyan-400 text-xl ml-2">+</span>
+                    </div>
+                    <div class="qa-answer text-cyan-200 text-sm pt-3">Look at the body shape first (round, flat, elongated), then fin positions, then colour and markings. Mouth position tells you if it's a surface, mid-water, or bottom feeder. Or -- snap a photo and use the Fish-Oid AI above! But if you want a proper reference, the <a href="https://www.amazon.co.uk/s?k=collins+complete+guide+british+coastal+wildlife&tag=chrisptee-21" target="_blank" class="text-amber-400 hover:text-amber-300 underline">Collins Complete Guide to British Coastal Wildlife</a> is the bible. I've had mine since the 90s and it's held together with hope and gaffer tape.</div>
+                </div>
+
+                <div class="qa-item p-5" onclick="toggleQA(this)">
+                    <div class="qa-question justify-between">
+                        <p class="font-bold text-white">Is shore fishing better than boat fishing?</p>
+                        <span class="text-cyan-400 text-xl ml-2">+</span>
+                    </div>
+                    <div class="qa-answer text-cyan-200 text-sm pt-3">They're different pleasures, mate. Shore fishing is meditative -- you, the sea, the sky, a flask of tea. You can go whenever you want, costs almost nothing, and there's something magical about casting into the dark on a winter beach. Boat fishing gets you to the big fish -- cod, ling, pollack over wrecks. It's more exciting but costs more and depends on weather. My advice: start on the shore. Fall in love with the sea first. The boats will come.</div>
+                </div>
+
+                <div class="qa-item p-5" onclick="toggleQA(this)">
+                    <div class="qa-question justify-between">
+                        <p class="font-bold text-white">What tackle do I need to start?</p>
+                        <span class="text-cyan-400 text-xl ml-2">+</span>
+                    </div>
+                    <div class="qa-answer text-cyan-200 text-sm pt-3">Don't go mad. A <a href="https://www.amazon.co.uk/s?k=sea+fishing+starter+kit+beachcaster&tag=chrisptee-21" target="_blank" class="text-amber-400 hover:text-amber-300 underline">starter rod and reel combo</a> (around 30-50 quid), a selection of hooks, some weights, a couple of rigs, a <a href="https://www.amazon.co.uk/s?k=fishing+tackle+box+sea&tag=chrisptee-21" target="_blank" class="text-amber-400 hover:text-amber-300 underline">tackle box</a>, and bait. That's it. Your local tackle shop is your best friend -- they'll tell you exactly what works in your area. Don't buy online until you know what you need. And never, ever buy the most expensive thing in the shop first.</div>
+                </div>
+
+                <div class="qa-item p-5" onclick="toggleQA(this)">
+                    <div class="qa-question justify-between">
+                        <p class="font-bold text-white">How do I find good fishing spots?</p>
+                        <span class="text-cyan-400 text-xl ml-2">+</span>
+                    </div>
+                    <div class="qa-answer text-cyan-200 text-sm pt-3">Talk to people. Seriously. Your local tackle shop knows every mark within 50 miles. Sea angling forums are gold mines. Look for features: rocks, gullies, drop-offs, harbour walls, pier ends, river mouths. Fish like structure -- places where they can ambush food or shelter from current. Low tide is your friend for spotting ground features you can't see at high water. Walk the coast. Learn the ground. The fish are there, they just don't advertise.</div>
+                </div>
+
+                <div class="qa-item p-5" onclick="toggleQA(this)">
+                    <div class="qa-question justify-between">
+                        <p class="font-bold text-white">What fish are in season right now?</p>
+                        <span class="text-cyan-400 text-xl ml-2">+</span>
+                    </div>
+                    <div class="qa-answer text-cyan-200 text-sm pt-3">In the UK it cycles beautifully. <strong>Spring:</strong> Bass start arriving, flatfish (dab, flounder). <strong>Summer:</strong> Mackerel, garfish, smoothhound, rays, tope. <strong>Autumn:</strong> Cod start showing, still bass, the big wrasse. <strong>Winter:</strong> Cod, whiting, rockling, winter flounder. Something's always biting somewhere. That's the beauty of it. Check your local reports -- conditions matter more than calendar dates.</div>
+                </div>
+
+                <div class="qa-item p-5" onclick="toggleQA(this)">
+                    <div class="qa-question justify-between">
+                        <p class="font-bold text-white">Is it legal to keep what I catch?</p>
+                        <span class="text-cyan-400 text-xl ml-2">+</span>
+                    </div>
+                    <div class="qa-answer text-cyan-200 text-sm pt-3">Mostly, yes -- but with rules. Sea fishing in England doesn't need a rod licence (freshwater does). But there ARE minimum landing sizes (bass = 42cm, cod = 35cm, etc.), bag limits for bass (check yearly), and some species are catch-and-release only. Certain areas are Marine Conservation Zones with extra restrictions. Always check before you go. The <a href="https://www.amazon.co.uk/s?k=sea+fishing+identification+cards+uk&tag=chrisptee-21" target="_blank" class="text-amber-400 hover:text-amber-300 underline">fish ID cards with size guides</a> are worth having in your tackle box.</div>
+                </div>
+
+                <div class="qa-item p-5" onclick="toggleQA(this)">
+                    <div class="qa-question justify-between">
+                        <p class="font-bold text-white">How do I handle fish safely?</p>
+                        <span class="text-cyan-400 text-xl ml-2">+</span>
+                    </div>
+                    <div class="qa-answer text-cyan-200 text-sm pt-3">Safely for you AND the fish. Wet your hands first -- dry hands strip their protective slime. Hold firmly but gently behind the gill plate, never squeeze. Watch for spines (weever fish will RUIN your day). Use a disgorger or long-nose pliers for deep hooks. If you're releasing, minimise air time -- photo and back in, quick as you can. If the hook's too deep, cut the line close. The hook will rust out. Better that than killing the fish trying to remove it. Respect the catch. Always.</div>
+                </div>
+
+                <div class="qa-item p-5" onclick="toggleQA(this)">
+                    <div class="qa-question justify-between">
+                        <p class="font-bold text-white">Who is Captain Barnacle?</p>
+                        <span class="text-cyan-400 text-xl ml-2">+</span>
+                    </div>
+                    <div class="qa-answer text-cyan-200 text-sm pt-3">I'm a marine biologist from Whitby, Yorkshire. 62 years old, 30+ years studying the North Sea and beyond. Started on trawlers, ended up with a degree and a deep love of everything that swims, crawls, or floats. I've got a Jack Russell called Sprat who comes on every trip (he's a better lookout than most crewmates I've had). This village is my way of sharing what I've learned. The sea doesn't belong to experts -- it belongs to everyone. I'm just here to make the introductions.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CHATBOT: ASK CAPTAIN BARNACLE -->
+        <section id="pageBarnacle" class="section-fade mb-12">
+            <h2 class="text-3xl font-black text-white mb-1">⚓ Ask Captain Barnacle</h2>
+            <p class="text-cyan-400 mb-6">Chat with the Captain directly. Fish, marine life, tackle, tides, conservation -- anything from the sea. 24/7.</p>
+
+            <div class="chat-container">
+                <div class="bg-gradient-to-r from-[#0c4a6e] to-[#164e63] px-5 py-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">⚓</span>
+                        <div>
+                            <p class="font-bold text-white">Captain Barnacle</p>
+                            <p class="text-cyan-300 text-xs">Marine Biologist - Whitby - Online</p>
+                        </div>
+                    </div>
+                    <button onclick="clearChat()" class="text-cyan-300 hover:text-white text-sm transition" aria-label="Clear chat history">Clear</button>
+                </div>
+
+                <div id="chatMessages" class="chat-messages" role="log" aria-live="polite" aria-label="Chat with Captain Barnacle"></div>
+
+                <div class="border-t border-cyan-900/50 p-3">
+                    <div class="flex gap-2">
+                        <input type="text" id="userInput" placeholder="Ask the Captain anything..." class="flex-1 bg-[#0c4a6e] border border-cyan-800 rounded-lg px-4 py-3 text-white placeholder-cyan-600 focus:border-cyan-400 focus:outline-none" aria-label="Your message to Captain Barnacle" onkeydown="if(event.key==='Enter')sendMessage()">
+                        <button onclick="sendMessage()" id="sendBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold px-5 rounded-lg transition min-w-[48px]" aria-label="Send message">
+                            <span id="sendText">🐟</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <p class="text-cyan-700 text-xs text-center mt-3">Conservation always matters. The Captain will always encourage responsible fishing.</p>
+        </section>
+
+        <!-- GEAR / AMAZON -->
+        <section id="pageGear" class="section-fade mb-12">
+            <h2 class="text-3xl font-black text-white mb-1">🪝 Captain Barnacle's Tackle Box</h2>
+            <p class="text-cyan-400 mb-6">Honest recommendations. Gear I've used, books I've read, kit that works. No sponsored rubbish.</p>
+
+            <div class="grid md:grid-cols-2 gap-4 mb-8">
+                <div class="bg-cyan-900/20 rounded-xl p-6 border border-cyan-800/30">
+                    <h3 class="font-bold text-amber-400 mb-3">🎣 Starter Kit</h3>
+                    <div class="space-y-2 text-sm">
+                        <a href="https://www.amazon.co.uk/s?k=sea+fishing+rod+reel+starter+kit&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> Fishing Rod Starter Kit</a>
+                        <a href="https://www.amazon.co.uk/s?k=fishing+tackle+box+loaded&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> Loaded Tackle Box</a>
+                        <a href="https://www.amazon.co.uk/s?k=sea+fishing+hooks+circle+mixed&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> Circle Hook Selection</a>
+                        <a href="https://www.amazon.co.uk/s?k=fishing+line+mono+15lb&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> 15lb Mono Line</a>
+                    </div>
+                </div>
+
+                <div class="bg-cyan-900/20 rounded-xl p-6 border border-cyan-800/30">
+                    <h3 class="font-bold text-amber-400 mb-3">📖 Essential Reading</h3>
+                    <div class="space-y-2 text-sm">
+                        <a href="https://www.amazon.co.uk/s?k=collins+complete+guide+british+coastal+wildlife&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> Collins Complete Guide to British Coastal Wildlife</a>
+                        <a href="https://www.amazon.co.uk/s?k=sea+fishing+identification+cards+uk&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> Fish Identification Cards</a>
+                        <a href="https://www.amazon.co.uk/s?k=complete+guide+to+sea+fishing+book&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> The Complete Guide to Sea Fishing</a>
+                        <a href="https://www.amazon.co.uk/s?k=tide+tables+uk+2026&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> UK Tide Tables 2026</a>
+                    </div>
+                </div>
+
+                <div class="bg-cyan-900/20 rounded-xl p-6 border border-cyan-800/30">
+                    <h3 class="font-bold text-amber-400 mb-3">🕶️ Personal Kit</h3>
+                    <div class="space-y-2 text-sm">
+                        <a href="https://www.amazon.co.uk/s?k=polarised+sunglasses+fishing&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> Polarised Fishing Sunglasses</a>
+                        <a href="https://www.amazon.co.uk/s?k=waterproof+dry+bag+fishing&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> Waterproof Dry Bag</a>
+                        <a href="https://www.amazon.co.uk/s?k=headtorch+fishing+red+light&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> Headtorch (Red Light Mode)</a>
+                        <a href="https://www.amazon.co.uk/s?k=fishing+gloves+fingerless&tag=chrisptee-21" target="_blank" class="block text-cyan-200 hover:text-white transition">-> Fingerless Fishing Gloves</a>
+                    </div>
+                </div>
+
+                <div class="bg-cyan-900/20 rounded-xl p-6 border border-cyan-800/30">
+                    <h3 class="font-bold text-amber-400 mb-3">📱 Essential Apps</h3>
+                    <div class="space-y-2 text-sm text-cyan-200">
+                        <p>-> <strong>Fishbrain</strong> -- catches, spots, species ID</p>
+                        <p>-> <strong>Magic Seaweed</strong> -- tides, swell, conditions</p>
+                        <p>-> <strong>What3Words</strong> -- Coastguard uses this!</p>
+                        <p>-> <strong>Windy</strong> -- weather and wind forecasting</p>
+                        <p>-> <strong>iRecord</strong> -- report marine wildlife sightings</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- The Code -->
+            <div class="bg-cyan-900/20 rounded-2xl border border-cyan-800/30 overflow-hidden mb-8">
+                <div class="p-5 cursor-pointer" onclick="toggleQA(this.parentElement)">
+                    <div class="qa-question justify-between">
+                        <p class="font-bold text-white">⚓ The Harbour Code -- Community Rules</p>
+                        <span class="text-cyan-400 text-xl ml-2">+</span>
+                    </div>
+                    <div class="qa-answer text-cyan-200 text-sm pt-3">
+                        <div class="space-y-2">
+                            <p>1. <strong>Respect the sea.</strong> She doesn't forgive stupidity.</p>
+                            <p>2. <strong>Respect the catch.</strong> Handle with care, release with dignity.</p>
+                            <p>3. <strong>Respect each other.</strong> No gatekeeping. Every expert was once a beginner.</p>
+                            <p>4. <strong>Leave it better than you found it.</strong> Take your litter AND someone else's.</p>
+                            <p>5. <strong>Share knowledge freely.</strong> Hoarding information helps nobody.</p>
+                            <p>6. <strong>Conservation comes first.</strong> Always. No exceptions.</p>
+                            <p>7. <strong>Welcome the weird.</strong> Neurodivergent, odd hours, strange questions -- all welcome. The sea doesn't judge and neither do we.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Got a Noisy Brain? -->
+            <div class="bg-gradient-to-br from-purple-900/30 to-cyan-900/20 rounded-2xl p-6 border border-purple-800/30 mb-8">
+                <h3 class="text-xl font-bold text-purple-300 mb-3">🧠 Got a Noisy Brain?</h3>
+                <p class="text-cyan-200 text-sm mb-4">
+                    ADHD? Autistic? Both? Welcome home. The founder of the -Oid villages is AuDHD himself. Fishing is one of the best things for a noisy brain -- repetitive, sensory, meditative, no small talk required. The sea doesn't care about your diagnosis. Neither do we. You belong here exactly as you are.
+                </p>
+                <div class="text-cyan-300 text-sm space-y-1">
+                    <p>-- Hyperfocus on tying rigs? That's a superpower here.</p>
+                    <p>-- Can't sit still? Try lure fishing -- it's constant movement.</p>
+                    <p>-- Sensory overload from crowds? Night fishing. Just you, the dark, and the sea.</p>
+                    <p>-- Need routine? Tides are the most reliable clock on earth.</p>
+                </div>
+            </div>
+
+            <!-- Support Links -->
+            <div class="bg-gradient-to-br from-amber-900/20 to-cyan-900/20 rounded-2xl p-6 border border-amber-800/30">
+                <h3 class="text-xl font-bold text-amber-400 mb-3">🐚 Support the Village</h3>
+                <p class="text-cyan-200 text-sm mb-4">Fish-Oid is free forever. Coffeeware model -- use it, love it, donate if it helps. Every penny keeps the lights on and the tea brewing.</p>
+                <div class="flex flex-wrap gap-3">
+                    <a href="https://ko-fi.com/zoom" target="_blank" class="bg-pink-500 hover:bg-pink-600 text-white px-5 py-3 rounded-xl font-bold transition text-sm">Ko-Fi</a>
+                    <a href="https://buymeacoffee.com/chrispteemagician" target="_blank" class="bg-amber-500 hover:bg-amber-600 text-black px-5 py-3 rounded-xl font-bold transition text-sm">BuyMeACoffee</a>
+                    <a href="https://www.tiktok.com/@chrispteemagician" target="_blank" class="bg-gray-800 hover:bg-gray-700 text-white px-5 py-3 rounded-xl font-bold transition text-sm">TikTok</a>
+                    <a href="https://www.instagram.com/spicylister" target="_blank" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-5 py-3 rounded-xl font-bold transition text-sm">Instagram</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- LEADERBOARD VIEW (hidden) -->
+        <div id="leaderboardView" class="hidden">
+            <div class="bg-cyan-900/20 rounded-2xl border border-cyan-800/30 p-6">
+                <h2 class="text-2xl font-bold text-white mb-6 text-center">Kudos Leaderboard</h2>
+                <div id="leaderboardList" class="space-y-3">
+                    <p class="text-center text-cyan-600">Loading...</p>
+                </div>
+                <button onclick="switchView('home')" class="w-full mt-6 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 rounded-xl transition">
+                    Back to Home
+                </button>
+            </div>
+        </div>
+
+        <!-- QR CODE VIEW (hidden) -->
+        <div id="qrView" class="hidden">
+            <div class="bg-cyan-900/20 rounded-2xl border border-cyan-800/30 p-6 text-center">
+                <h2 class="text-2xl font-bold text-white mb-4">Your Referral QR Code</h2>
+                <img id="qrImage" src="" alt="QR Code" class="w-64 h-64 mx-auto mb-4 rounded-xl shadow-lg">
+                <p class="text-cyan-300 mb-2">Share this to earn <strong>50 kudos</strong> per signup!</p>
+                <button onclick="downloadQR()" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 px-6 rounded-xl transition mb-3">Download QR Code</button>
+                <button onclick="switchView('home')" class="w-full bg-cyan-900/30 hover:bg-cyan-900/50 text-white font-bold py-3 rounded-xl transition">Back to Home</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- QUICK NAV (signed in) -->
+    <div id="quickNav" class="hidden fixed bottom-4 right-4 flex flex-col gap-2 z-30">
+        <button onclick="switchView('leaderboard')" class="bg-[#0c4a6e] hover:bg-cyan-900 text-white font-bold py-3 px-4 rounded-full shadow-lg transition border border-cyan-800/30">🏆</button>
+        <button onclick="switchView('qr')" class="bg-[#0c4a6e] hover:bg-cyan-900 text-white font-bold py-3 px-4 rounded-full shadow-lg transition border border-cyan-800/30">📱</button>
+    </div>
+
+    <!-- VILLAGE / COMMUNITY -->
+    <section id="pageVillage" class="bg-[#071e33] py-12 border-t border-cyan-900/30">
+        <div class="max-w-4xl mx-auto px-4">
+            <h2 class="text-3xl font-black text-white mb-2 text-center">🏘️ The -Oid Villages</h2>
+            <p class="text-cyan-400 text-center mb-8">Same AI brain, different expert heads. Each village has its own community of enthusiasts.</p>
+
+            <div class="grid grid-cols-4 md:grid-cols-5 gap-3 mb-8">
+                <a href="https://magic-oid.co.uk" class="bg-cyan-900/30 hover:bg-purple-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">🎩</span>
+                    <span class="block text-xs font-semibold text-purple-400 mt-1">Magic-Oid</span>
+                </a>
+                <a href="https://radi-oid.co.uk" class="bg-cyan-900/30 hover:bg-orange-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">📻</span>
+                    <span class="block text-xs font-semibold text-orange-400 mt-1">Radi-Oid</span>
+                </a>
+                <a href="https://sail-oid.co.uk" class="bg-cyan-900/30 hover:bg-sky-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">⛵</span>
+                    <span class="block text-xs font-semibold text-sky-400 mt-1">Sail-Oid</span>
+                </a>
+                <a href="https://guit-oid.co.uk" class="bg-cyan-900/30 hover:bg-amber-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">🎸</span>
+                    <span class="block text-xs font-semibold text-amber-400 mt-1">Guit-Oid</span>
+                </a>
+                <a href="https://vinyl-oid.co.uk" class="bg-cyan-900/30 hover:bg-purple-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">💿</span>
+                    <span class="block text-xs font-semibold text-purple-400 mt-1">Vinyl-Oid</span>
+                </a>
+                <a href="https://coin-oid.co.uk" class="bg-cyan-900/30 hover:bg-yellow-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">🪙</span>
+                    <span class="block text-xs font-semibold text-yellow-400 mt-1">Coin-Oid</span>
+                </a>
+                <a href="https://watch-oid.co.uk" class="bg-cyan-900/30 hover:bg-cyan-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">⌚</span>
+                    <span class="block text-xs font-semibold text-cyan-400 mt-1">Watch-Oid</span>
+                </a>
+                <a href="https://camera-oid.co.uk" class="bg-cyan-900/30 hover:bg-orange-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">📷</span>
+                    <span class="block text-xs font-semibold text-orange-400 mt-1">Camera-Oid</span>
+                </a>
+                <a href="https://stamp-oid.co.uk" class="bg-cyan-900/30 hover:bg-rose-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">📮</span>
+                    <span class="block text-xs font-semibold text-rose-400 mt-1">Stamp-Oid</span>
+                </a>
+                <a href="https://cannabin-oid.co.uk" class="bg-cyan-900/30 hover:bg-green-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">🌿</span>
+                    <span class="block text-xs font-semibold text-green-400 mt-1">Cannabin-Oid</span>
+                </a>
+                <!-- YOU'RE HERE -->
+                <div class="bg-cyan-800/40 border-2 border-cyan-400/50 rounded-xl p-3 text-center">
+                    <span class="text-2xl">🐟</span>
+                    <span class="block text-xs font-bold text-cyan-300 mt-1">YOU'RE HERE!</span>
+                </div>
+                <a href="https://designer-oid.co.uk" class="bg-cyan-900/30 hover:bg-rose-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">👗</span>
+                    <span class="block text-xs font-semibold text-rose-400 mt-1">Designer-Oid</span>
+                </a>
+                <a href="https://miniature-oid.co.uk" class="bg-cyan-900/30 hover:bg-indigo-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">🔍</span>
+                    <span class="block text-xs font-semibold text-indigo-400 mt-1">Miniature-Oid</span>
+                </a>
+                <a href="https://spicylister.com" class="bg-cyan-900/30 hover:bg-red-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                    <span class="text-2xl">🌶️</span>
+                    <span class="block text-xs font-semibold text-red-400 mt-1">SpicyLister</span>
+                </a>
+            </div>
+
+            <!-- The Family -->
+            <h3 class="text-lg font-bold text-center text-cyan-400 mb-4">The Family</h3>
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-2 mb-8">
+                <a href="https://comedymagic.co.uk" class="bg-cyan-900/20 border border-cyan-800/20 rounded-lg p-2 text-center hover:bg-cyan-900/40 transition">
+                    <span class="text-xl">🎭</span>
+                    <span class="block text-xs text-cyan-500 mt-1">Comedy Magic</span>
+                </a>
+                <a href="https://docstrange.co.uk" class="bg-cyan-900/20 border border-cyan-800/20 rounded-lg p-2 text-center hover:bg-cyan-900/40 transition">
+                    <span class="text-xl">🧠</span>
+                    <span class="block text-xs text-cyan-500 mt-1">Doc Strange</span>
+                </a>
+                <a href="https://chrisptee.co.uk" class="bg-cyan-900/20 border border-cyan-800/20 rounded-lg p-2 text-center hover:bg-cyan-900/40 transition">
+                    <span class="text-xl">🎩</span>
+                    <span class="block text-xs text-cyan-500 mt-1">Chris P Tee</span>
+                </a>
+                <a href="https://feelfamous.com" class="bg-cyan-900/20 border border-cyan-800/20 rounded-lg p-2 text-center hover:bg-cyan-900/40 transition">
+                    <span class="text-xl">⭐</span>
+                    <span class="block text-xs text-cyan-500 mt-1">FeelFamous</span>
+                </a>
+                <a href="https://strangemole.co.uk" class="bg-cyan-900/20 border border-cyan-800/20 rounded-lg p-2 text-center hover:bg-cyan-900/40 transition">
+                    <span class="text-xl">🕳️</span>
+                    <span class="block text-xs text-cyan-500 mt-1">Strange Mole</span>
+                </a>
+                <a href="https://jackmingus.co.uk" class="bg-cyan-900/20 border border-cyan-800/20 rounded-lg p-2 text-center hover:bg-cyan-900/40 transition">
+                    <span class="text-xl">🎺</span>
+                    <span class="block text-xs text-cyan-500 mt-1">Jack Mingus</span>
+                </a>
+            </div>
+
+            <!-- Create Your Hamlet -->
+            <div class="bg-gradient-to-br from-amber-900/20 to-cyan-900/20 rounded-2xl p-8 border border-amber-800/30 mb-8 text-center">
+                <h3 class="text-2xl font-black text-white mb-2">🏗️ Create Your Hamlet</h3>
+                <p class="text-cyan-200 text-sm mb-4 max-w-xl mx-auto">
+                    Want your own page inside the -Oid village? Your own shop, your own community corner, your own little piece of the harbour. Self-service hamlets are coming -- your expertise, your page, your rules.
+                </p>
+                <a href="https://magic-oid.co.uk/hamlet/signup" target="_blank" class="inline-block bg-amber-500 hover:bg-amber-600 text-black px-6 py-3 rounded-xl font-bold transition">
+                    Register Interest
+                </a>
+            </div>
+
+            <!-- Join Section -->
+            <div class="bg-cyan-900/20 rounded-2xl border border-cyan-800/30 p-8 mb-8">
+                <h3 class="text-2xl font-black text-white mb-4 text-center">Join the Village</h3>
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-cyan-900/30 rounded-xl p-6 text-center border border-cyan-800/30">
+                        <p class="text-3xl mb-2">🐟</p>
+                        <p class="font-bold text-white text-lg">Free</p>
+                        <p class="text-amber-400 font-bold text-xl mb-2">Forever</p>
+                        <p class="text-cyan-300 text-sm">AI identification, learn section, Q&A, chatbot. No limits, no ads, no catch.</p>
+                    </div>
+                    <div class="bg-gradient-to-b from-amber-900/30 to-cyan-900/30 rounded-xl p-6 text-center border-2 border-amber-500/50">
+                        <p class="text-3xl mb-2">⭐</p>
+                        <p class="font-bold text-white text-lg">Founder Villager</p>
+                        <p class="text-amber-400 font-bold text-xl mb-2">£27/year</p>
+                        <p class="text-cyan-300 text-sm">PRO across ALL villages, hamlet access, priority support, kudos multiplier. Price locked forever.</p>
+                    </div>
+                    <div class="bg-gradient-to-b from-purple-900/30 to-cyan-900/30 rounded-xl p-6 text-center border-2 border-purple-500/50">
+                        <p class="text-3xl mb-2">👑</p>
+                        <p class="font-bold text-white text-lg">Founder Master</p>
+                        <p class="text-amber-400 font-bold text-xl mb-2">£97/year</p>
+                        <p class="text-cyan-300 text-sm">Everything above plus: custom hamlet, dealer berth, early access to new villages, direct line to Chris.</p>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <a href="https://buy.stripe.com/aFabJ1fJ10Vw6zT89NfrW00" target="_blank" class="inline-block bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-bold transition">
+                        Join the Family
+                    </a>
+                </div>
+            </div>
+
+            <!-- Contact -->
+            <div class="text-center mb-4">
+                <h3 class="text-lg font-bold text-white mb-3">Get in Touch</h3>
+                <div class="flex flex-wrap gap-3 justify-center">
+                    <a href="https://wa.me/447976884254" class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-bold transition text-sm">WhatsApp Chris</a>
+                    <a href="mailto:chris@chrisptee.co.uk" class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-3 rounded-xl font-bold transition text-sm">Email Chris</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-[#051525] py-10 border-t border-cyan-900/20">
+        <div class="max-w-4xl mx-auto text-center px-4">
+            <h3 class="text-lg font-bold text-cyan-400 mb-3">Standing on the Shoulders of Giants</h3>
+            <p class="text-sm text-cyan-600 mb-4">Jacques Cousteau - Rachel Carson - David Attenborough - Sylvia Earle - Izaak Walton - John Wilson - Hans Hass - Charles Darwin</p>
+            <p class="font-hand text-xl text-amber-400 mb-4">"The sea, once it casts its spell, holds one in its net of wonder forever." -- Jacques Cousteau</p>
+            <div class="flex flex-wrap gap-3 justify-center mb-4">
+                <a href="https://buymeacoffee.com/chrispteemagician" class="text-amber-400 hover:text-amber-300 text-sm transition">BuyMeACoffee</a>
+                <a href="https://ko-fi.com/zoom" class="text-pink-400 hover:text-pink-300 text-sm transition">Ko-Fi</a>
+                <a href="https://wa.me/447976884254" class="text-green-400 hover:text-green-300 text-sm transition">WhatsApp</a>
+                <a href="https://feelfamous.com" class="text-cyan-400 hover:text-cyan-300 text-sm transition">FeelFamous</a>
+            </div>
+            <p class="text-xs text-cyan-700 mb-1">
+                Built by <a href="https://chrisptee.co.uk" class="text-cyan-500 hover:text-cyan-400">Chris P Tee</a> -
+                Part of <a href="https://feelfamous.com" class="text-cyan-500 hover:text-cyan-400">FeelFamous</a> -
+                Captain Barnacle's Harbour Village
+            </p>
+            <p class="text-xs text-cyan-800 mb-2">World Domination Through Kindness. One ember at a time.</p>
+            <p class="text-xs text-cyan-900">Compass mapped. Forge built. Ember sparked. 🐟</p>
+        </div>
+    </footer>
+
+    <canvas id="resultCanvas" class="hidden"></canvas>
+
+    <!-- SCRIPTS -->
+    <script>
+        // CONFIG
+        const CONFIG = {
+            oidName: 'Fish-Oid',
+            oidSlug: 'fishing',
+            primaryColor: '#0e7490',
+            loadingIcon: '🐟',
+            supabaseUrl: 'https://pdnjeynugptnavkdbmxh.supabase.co',
+            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkbmpleW51Z3B0bmF2a2RibXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMTEzMDAsImV4cCI6MjA4NDU4NzMwMH0.GawisR01EykMtdauBMxenmHF2NXDMzDOJl8WgzkwFQo',
+            adminEmails: ['chris@chrisptee.co.uk', 'chris@chrisptee.com', 'glowgadgets@gmail.com']
+        };
+
+        const { createClient } = supabase;
+        const supabaseClient = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+
+        let currentUser = null;
+        let currentResult = null;
+        let userQRCode = null;
+
+        // IMAGE COMPRESSION
+        async function compressImage(file, maxSize = 800, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let { width, height } = img;
+                        if (width > maxSize || height > maxSize) {
+                            if (width > height) {
+                                height = (height / width) * maxSize;
+                                width = maxSize;
+                            } else {
+                                width = (width / height) * maxSize;
+                                height = maxSize;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve({ base64: dataUrl.split(',')[1], dataUrl });
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // AMAZON SEARCH PARSING
+        function parseAmazonSearch(description) {
+            const match = description.match(/AMAZON_SEARCH:\s*(.+?)(\n|$)/i);
+            if (match) {
+                const searchTerm = match[1].trim();
+                const cleanDesc = description.replace(/AMAZON_SEARCH:\s*.+?(\n|$)/i, '').trim();
+                return { searchTerm, cleanDesc };
+            }
+            return { searchTerm: null, cleanDesc: description };
+        }
+
+        // LOADING / PATIENCE SYSTEM
+        const patientMessages = [
+            "Checking the tide tables...",
+            "Consulting the fish finder...",
+            "Scanning the reef...",
+            "Examining scale patterns...",
+            "Cross-referencing marine databases...",
+            "Sprat's having a look too...",
+            "Checking the captain's logbook...",
+            "Analysing fin configuration...",
+            "Consulting the harbour records...",
+            "Examining gill plate markings...",
+            "Reading the water temperature...",
+            "Noting lateral line features...",
+            "Almost there, patience pays off...",
+            "The AI is being thorough, not fast..."
+        ];
+        let messageIndex = 0;
+        let loadingStartTime = 0;
+        let loadingTimerInterval = null;
+
+        function updateLoadingMessage(customMsg) {
+            const msgEl = document.getElementById('loadingMessage');
+            if (customMsg) { msgEl.textContent = customMsg; }
+            else { msgEl.textContent = patientMessages[messageIndex % patientMessages.length]; messageIndex++; }
+        }
+
+        function startLoadingTimer() {
+            loadingStartTime = Date.now();
+            messageIndex = 0;
+            const timerEl = document.getElementById('loadingTimer');
+            loadingTimerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - loadingStartTime) / 1000);
+                timerEl.textContent = elapsed + 's';
+                if (elapsed > 0 && elapsed % 4 === 0) updateLoadingMessage();
+            }, 1000);
+        }
+
+        function stopLoadingTimer() {
+            if (loadingTimerInterval) { clearInterval(loadingTimerInterval); loadingTimerInterval = null; }
+        }
+
+        async function fetchWithRetry(url, options, maxRetries = 4) {
+            let lastError;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    const response = await fetch(url, options);
+                    const data = await response.json();
+                    if (data.error && (response.status === 429 || response.status === 503)) {
+                        if (attempt < maxRetries) {
+                            const waitTime = Math.pow(2, attempt) * 3000;
+                            updateLoadingMessage('Heavy seas... waiting ' + (waitTime/1000) + 's then trying again');
+                            await new Promise(resolve => setTimeout(resolve, waitTime));
+                            continue;
+                        }
+                    }
+                    return data;
+                } catch (error) {
+                    lastError = error;
+                    if (error.name === 'AbortError') throw error;
+                    if (attempt < maxRetries) {
+                        const waitTime = Math.pow(2, attempt) * 3000;
+                        updateLoadingMessage('Signal lost... trying again in ' + (waitTime/1000) + 's');
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                    }
+                }
+            }
+            throw lastError;
+        }
+
+        // AGE VERIFICATION
+        function checkAgeVerification() {
+            if (!localStorage.getItem('ageVerified')) {
+                document.getElementById('ageModal').classList.remove('hidden');
+            }
+        }
+
+        function confirmAge(type) {
+            localStorage.setItem('ageVerified', type);
+            localStorage.setItem('ageVerifiedDate', new Date().toISOString());
+            document.getElementById('ageModal').classList.add('hidden');
+            if (type === 'under18') {
+                alert('Please ask your parent or guardian to sign up with you. They can create an account and add you as a supervised user.');
+            }
+        }
+
+        // SUPABASE AUTH
+        async function checkUser() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                await loadUserData();
+                showUserStatus();
+            }
+        }
+
+        async function loadUserData() {
+            if (!currentUser) return;
+            try {
+                let { data: userData, error } = await supabaseClient
+                    .from('users').select('*').eq('id', currentUser.id).single();
+
+                if (error || !userData) {
+                    const { data: newUser } = await supabaseClient
+                        .from('users')
+                        .insert([{
+                            id: currentUser.id,
+                            email: currentUser.email,
+                            username: currentUser.email.split('@')[0],
+                            kudos: 0,
+                            oid_memberships: [CONFIG.oidSlug]
+                        }])
+                        .select().single();
+                    userData = newUser;
+                } else {
+                    if (!userData.oid_memberships.includes(CONFIG.oidSlug)) {
+                        await supabaseClient
+                            .from('users')
+                            .update({ oid_memberships: [...userData.oid_memberships, CONFIG.oidSlug] })
+                            .eq('id', currentUser.id);
+                    }
+                }
+
+                const oidCount = userData.oid_memberships.length;
+                let badge = 'Villager';
+                if (oidCount >= 5) badge = 'Pollinator';
+                else if (oidCount >= 2) badge = 'Bridge Walker';
+
+                document.getElementById('userName').textContent = '@' + userData.username;
+                document.getElementById('userBadge').textContent = badge;
+                document.getElementById('userKudos').textContent = userData.kudos || 0;
+
+                await generateQRCode();
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+
+        function showUserStatus() {
+            document.getElementById('userStatusBar').classList.remove('hidden');
+            document.getElementById('quickNav').classList.remove('hidden');
+            document.getElementById('signInPrompt')?.classList.add('hidden');
+        }
+
+        async function signUpOrIn(emailId, passwordId, formId, successId) {
+            const email = document.getElementById(emailId).value.trim();
+            const password = document.getElementById(passwordId).value;
+            if (!email || !email.includes('@')) { alert('Please enter a valid email address.'); return; }
+            if (!password || password.length < 6) { alert('Password must be at least 6 characters.'); return; }
+            const form = document.getElementById(formId);
+            const btn = form.querySelector('button');
+            const originalText = btn.textContent;
+            btn.textContent = 'Signing in...'; btn.disabled = true;
+            try {
+                const { data: signInData, error: signInError } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (!signInError && signInData.session) {
+                    document.getElementById(formId).classList.add('hidden');
+                    document.getElementById(successId).classList.remove('hidden');
+                    currentUser = signInData.session.user;
+                    await loadUserData();
+                    showUserStatus();
+                    return;
+                }
+                const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({ email, password });
+                if (signUpError) {
+                    if (signUpError.message.includes('already registered')) {
+                        alert('Account exists but password is wrong. Try again or WhatsApp Chris.');
+                    } else {
+                        alert('Error: ' + signUpError.message);
+                    }
+                    return;
+                }
+                if (signUpData.session) {
+                    document.getElementById(formId).classList.add('hidden');
+                    document.getElementById(successId).classList.remove('hidden');
+                    currentUser = signUpData.session.user;
+                    await loadUserData();
+                    showUserStatus();
+                } else {
+                    document.getElementById(formId).classList.add('hidden');
+                    document.getElementById(successId).classList.remove('hidden');
+                    document.getElementById(successId).innerHTML = '<p class="font-bold text-green-400">Check your email!</p><p class="text-sm mt-1 text-cyan-300">Click the confirmation link to complete sign up.</p>';
+                }
+            } catch (e) { alert('Error: ' + (e.message || e)); }
+            finally { btn.textContent = originalText; btn.disabled = false; }
+        }
+
+        async function signOut() {
+            await supabaseClient.auth.signOut();
+            currentUser = null;
+            location.reload();
+        }
+
+        async function generateQRCode() {
+            if (!currentUser) return;
+            const referralUrl = window.location.origin + '?ref=' + currentUser.id;
+            userQRCode = await QRCode.toDataURL(referralUrl, {
+                width: 300,
+                color: { dark: CONFIG.primaryColor, light: '#ffffff' }
+            });
+            document.getElementById('qrImage').src = userQRCode;
+        }
+
+        async function loadRecentActivity() {
+            try {
+                const { data } = await supabaseClient
+                    .from('users').select('username, created_at')
+                    .order('created_at', { ascending: false }).limit(5);
+                if (data && data.length > 0) {
+                    document.getElementById('activityList').innerHTML = data.map(user =>
+                        '<p>' + CONFIG.loadingIcon + ' <strong>' + user.username + '</strong> joined the village!</p>'
+                    ).join('');
+                } else {
+                    document.getElementById('activityList').innerHTML = '<p class="text-center text-cyan-600">Be the first to join!</p>';
+                }
+            } catch (error) {
+                console.error('Error loading activity:', error);
+            }
+        }
+
+        async function awardKudos(amount, reason) {
+            if (!currentUser) return;
+            try {
+                await supabaseClient.rpc('increment_kudos', { user_id: currentUser.id, amount: amount });
+                await supabaseClient.from('kudos_transactions').insert([{
+                    user_id: currentUser.id, amount: amount, reason: reason
+                }]);
+            } catch (error) {
+                console.error('Kudos error:', error);
+            }
+        }
+
+        // BROADCAST
+        function getYouTubeEmbedUrl(url) {
+            if (!url) return '';
+            let videoId = '';
+            if (url.includes('youtube.com/shorts/')) videoId = url.split('youtube.com/shorts/')[1].split('?')[0];
+            else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
+            else if (url.includes('youtube.com/watch')) videoId = new URLSearchParams(url.split('?')[1]).get('v');
+            else if (url.includes('youtube.com/embed/')) videoId = url.split('youtube.com/embed/')[1].split('?')[0];
+            return videoId ? 'https://www.youtube.com/embed/' + videoId : url;
+        }
+
+        async function loadBroadcast() {
+            try {
+                const { data } = await supabaseClient.from('broadcast').select('*').eq('is_active', true).limit(1).single();
+                if (!data) return;
+                document.getElementById('broadcastVideo').src = getYouTubeEmbedUrl(data.video_url);
+                document.getElementById('broadcastTitle').textContent = data.title || 'Village Broadcast';
+                document.getElementById('broadcastSection').classList.remove('hidden');
+                if (data.is_emergency) document.getElementById('emergencyBanner').classList.remove('hidden');
+            } catch (e) { console.log('Broadcast not available'); }
+        }
+
+        // TAB SWITCHING
+        function switchTab(tab) {
+            const identifyView = document.getElementById('identifyView');
+            const roastView = document.getElementById('roastView');
+            const identifyTab = document.getElementById('identifyTab');
+            const roastTab = document.getElementById('roastTab');
+
+            if (tab === 'identify') {
+                identifyView.classList.remove('hidden');
+                roastView.classList.add('hidden');
+                identifyTab.className = 'flex-1 py-3 rounded-xl tab-active transition font-semibold';
+                roastTab.className = 'flex-1 py-3 rounded-xl tab-inactive transition font-semibold';
+            } else {
+                identifyView.classList.add('hidden');
+                roastView.classList.remove('hidden');
+                identifyTab.className = 'flex-1 py-3 rounded-xl tab-inactive transition font-semibold';
+                roastTab.className = 'flex-1 py-3 rounded-xl tab-active transition font-semibold';
+            }
+        }
+
+        // LEARN TAB SWITCHING
+        function switchLearnTab(tab) {
+            document.getElementById('learnFishid').classList.add('hidden');
+            document.getElementById('learnBasics').classList.add('hidden');
+            document.getElementById('learnConservation').classList.add('hidden');
+            document.getElementById('learnTab1').className = 'learn-tab-inactive px-4 py-2 transition text-sm';
+            document.getElementById('learnTab2').className = 'learn-tab-inactive px-4 py-2 transition text-sm';
+            document.getElementById('learnTab3').className = 'learn-tab-inactive px-4 py-2 transition text-sm';
+
+            if (tab === 'fishid') {
+                document.getElementById('learnFishid').classList.remove('hidden');
+                document.getElementById('learnTab1').className = 'learn-tab-active px-4 py-2 transition text-sm';
+            } else if (tab === 'basics') {
+                document.getElementById('learnBasics').classList.remove('hidden');
+                document.getElementById('learnTab2').className = 'learn-tab-active px-4 py-2 transition text-sm';
+            } else {
+                document.getElementById('learnConservation').classList.remove('hidden');
+                document.getElementById('learnTab3').className = 'learn-tab-active px-4 py-2 transition text-sm';
+            }
+        }
+
+        function switchView(view) {
+            const leaderboard = document.getElementById('leaderboardView');
+            const qr = document.getElementById('qrView');
+            leaderboard.classList.add('hidden');
+            qr.classList.add('hidden');
+
+            if (view === 'leaderboard') {
+                leaderboard.classList.remove('hidden');
+                leaderboard.scrollIntoView({ behavior: 'smooth' });
+                loadLeaderboard();
+            } else if (view === 'qr') {
+                qr.classList.remove('hidden');
+                qr.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        async function loadLeaderboard() {
+            try {
+                const { data } = await supabaseClient
+                    .from('users').select('username, kudos, oid_memberships')
+                    .order('kudos', { ascending: false }).limit(10);
+                if (data) {
+                    document.getElementById('leaderboardList').innerHTML = data.map((user, i) => {
+                        const oidCount = user.oid_memberships.length;
+                        let badge = '🐟';
+                        if (oidCount >= 5) badge = '🐝';
+                        else if (oidCount >= 2) badge = '🌉';
+                        return '<div class="flex items-center justify-between bg-cyan-900/30 p-4 rounded-xl">' +
+                            '<div class="flex items-center gap-3">' +
+                            '<span class="text-2xl font-bold text-cyan-400">#' + (i + 1) + '</span>' +
+                            '<span>' + badge + '</span>' +
+                            '<span class="font-bold text-white">@' + user.username + '</span>' +
+                            '</div>' +
+                            '<span class="text-amber-400 font-bold">' + user.kudos + ' kudos</span>' +
+                            '</div>';
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+            }
+        }
+
+        // IMAGE UPLOAD & IDENTIFICATION
+        async function handleUpload(mode, input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            ['identifyView', 'roastView'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById('loadingView').classList.remove('hidden');
+            startLoadingTimer();
+
+            try {
+                const { base64, dataUrl } = await compressImage(file, 800, 0.7);
+                updateLoadingMessage('Casting the line...');
+
+                const data = await fetchWithRetry('/.netlify/functions/analyze-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: base64,
+                        mode: mode,
+                        oidType: CONFIG.oidSlug,
+                        userId: currentUser?.id
+                    })
+                }, 4);
+
+                if (data.error) {
+                    stopLoadingTimer();
+                    alert(data.description || 'Analysis failed.');
+                    resetToHome();
+                    return;
+                }
+
+                currentResult = { mode: mode, image: dataUrl, ...data };
+                showResult(currentResult);
+
+                if (currentUser) {
+                    await awardKudos(10, 'Image analysis');
+                    document.getElementById('kudosEarned').classList.remove('hidden');
+                    document.getElementById('signInPrompt').classList.add('hidden');
+                    await loadUserData();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                stopLoadingTimer();
+                alert(error.name === 'AbortError' ? 'Request timed out. Try again.' : 'Error analyzing image. Please try again.');
+                resetToHome();
+            }
+            input.value = '';
+        }
+
+        function showResult(result) {
+            stopLoadingTimer();
+            document.getElementById('loadingView').classList.add('hidden');
+            document.getElementById('resultView').classList.remove('hidden');
+
+            document.getElementById('resultImage').src = result.image;
+            document.getElementById('resultTitle').textContent = result.title || 'Identified!';
+
+            const { searchTerm, cleanDesc } = parseAmazonSearch(result.description || '');
+            document.getElementById('resultDescription').textContent = cleanDesc;
+
+            const amazonLinkDiv = document.getElementById('amazonLink');
+            const amazonBtn = document.getElementById('amazonBtn');
+            if (searchTerm) {
+                const amazonUrl = 'https://www.amazon.co.uk/s?k=' + encodeURIComponent(searchTerm) + '&tag=chrisptee-21';
+                amazonBtn.href = amazonUrl;
+                amazonBtn.innerHTML = '🪝 Find "' + searchTerm + '" on Amazon';
+                amazonLinkDiv.classList.remove('hidden');
+            } else {
+                amazonLinkDiv.classList.add('hidden');
+            }
+
+            const priceEl = document.getElementById('resultPrice');
+            if (result.price) {
+                priceEl.textContent = 'Est. Value: ' + result.price;
+                priceEl.classList.remove('hidden');
+            } else {
+                priceEl.classList.add('hidden');
+            }
+
+            document.getElementById('resultAttribution').textContent = currentUser
+                ? 'Identified by @' + currentUser.email.split('@')[0]
+                : 'Identified by ' + CONFIG.oidName;
+        }
+
+        function resetToHome() {
+            document.getElementById('resultView').classList.add('hidden');
+            document.getElementById('loadingView').classList.add('hidden');
+            document.getElementById('identifyView').classList.remove('hidden');
+            document.getElementById('kudosEarned')?.classList.add('hidden');
+            currentResult = null;
+            ['cameraInput', 'galleryInput', 'roastCamera', 'roastGallery'].forEach(id => {
+                const input = document.getElementById(id);
+                if (input) input.value = '';
+            });
+        }
+
+        // SHARE & DOWNLOAD
+        function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let lineCount = 0;
+            const maxLines = 6;
+            for (let word of words) {
+                const testLine = line + word + ' ';
+                if (ctx.measureText(testLine).width > maxWidth && line) {
+                    ctx.fillText(line.trim(), x, y);
+                    line = word + ' ';
+                    y += lineHeight;
+                    lineCount++;
+                    if (lineCount >= maxLines) { ctx.fillText('...', x, y); return; }
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line.trim(), x, y);
+        }
+
+        async function shareResult() {
+            if (!currentResult) return;
+            const canvas = document.getElementById('resultCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1080;
+            canvas.height = 1350;
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#0e7490');
+            gradient.addColorStop(1, '#0891b2');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const img = new Image();
+            img.onload = async () => {
+                const scale = Math.min(800 / img.width, 500 / img.height);
+                const w = img.width * scale;
+                const h = img.height * scale;
+                const x = (canvas.width - w) / 2;
+                const y = 80;
+
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 20;
+                ctx.drawImage(img, x, y, w, h);
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = '#fbbf24';
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 48px Outfit, sans-serif';
+                ctx.fillText(currentResult.title || 'Fish-Oid', canvas.width / 2, y + h + 70);
+
+                const { cleanDesc } = parseAmazonSearch(currentResult.description || '');
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Outfit, sans-serif';
+                wrapText(ctx, cleanDesc.substring(0, 300), canvas.width / 2, y + h + 120, 900, 35);
+
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 32px Outfit, sans-serif';
+                ctx.fillText('fish-oid.co.uk', canvas.width / 2, canvas.height - 80);
+
+                if (navigator.share && navigator.canShare) {
+                    try {
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        const file = new File([blob], 'fish-oid-result.png', { type: 'image/png' });
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                title: currentResult.title || 'Fish-Oid Result',
+                                text: 'Check out what Fish-Oid identified! fish-oid.co.uk',
+                                files: [file]
+                            });
+                            return;
+                        }
+                    } catch (e) {
+                        if (e.name !== 'AbortError') console.log('Share failed:', e);
+                    }
+                }
+                try {
+                    await navigator.clipboard.writeText('Check out Fish-Oid - AI marine identification! fish-oid.co.uk');
+                    alert('Link copied! Share it on the quayside.');
+                } catch (e) {
+                    alert('Share: fish-oid.co.uk');
+                }
+            };
+            img.src = currentResult.image;
+        }
+
+        async function downloadResult() {
+            if (!currentResult) return;
+            const canvas = document.getElementById('resultCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1080;
+            canvas.height = 1350;
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#0e7490');
+            gradient.addColorStop(1, '#0891b2');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const img = new Image();
+            img.onload = () => {
+                const scale = Math.min(800 / img.width, 500 / img.height);
+                const w = img.width * scale;
+                const h = img.height * scale;
+                const x = (canvas.width - w) / 2;
+                const y = 80;
+
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 20;
+                ctx.drawImage(img, x, y, w, h);
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 48px Outfit, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(currentResult.title || CONFIG.oidName, canvas.width / 2, y + h + 70);
+
+                const { cleanDesc } = parseAmazonSearch(currentResult.description || '');
+                ctx.fillStyle = 'white';
+                ctx.font = '28px Outfit, sans-serif';
+                wrapText(ctx, cleanDesc.substring(0, 350), canvas.width / 2, y + h + 120, 900, 38);
+
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 32px Outfit, sans-serif';
+                ctx.fillText('fish-oid.co.uk', canvas.width / 2, canvas.height - 80);
+
+                const link = document.createElement('a');
+                link.download = 'fish-oid-result.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
+            img.src = currentResult.image;
+        }
+
+        function downloadQR() {
+            if (!userQRCode) return;
+            const link = document.createElement('a');
+            link.download = CONFIG.oidName + '-referral-qr.png';
+            link.href = userQRCode;
+            link.click();
+        }
+
+        // CHATBOT (Captain Barnacle)
+        let chatHistory = [];
+        let isChatLoading = false;
+        const RATE_LIMIT_MS = 2000;
+        let lastMessageTime = 0;
+
+        const savedChat = localStorage.getItem('barnacle_chat_history');
+        if (savedChat) {
+            try { chatHistory = JSON.parse(savedChat); } catch(e) { chatHistory = []; }
+        }
+
+        function initChat() {
+            renderMessages();
+            if (chatHistory.length === 0) {
+                addBarnacleMessage("Now then! I'm Captain Barnacle \u2014 been studying and fishing the seas for 30-odd years. Whether you've caught something strange, found something on the beach, or just want to know what's swimming under your feet \u2014 ask away. I've got Sprat here keeping me company and a flask of tea that's still warm. What can I help with?");
+            }
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = chatHistory.map(msg =>
+                '<div class="mb-3 flex ' + (msg.role === 'user' ? 'justify-end' : 'justify-start') + '">' +
+                '<div class="' + (msg.role === 'user' ? 'msg-user' : 'msg-barnacle') + ' p-4 text-sm text-white whitespace-pre-wrap">' + escapeHtml(msg.text) + '</div>' +
+                '</div>'
+            ).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function addBarnacleMessage(text) {
+            chatHistory.push({ role: 'barnacle', text });
+            localStorage.setItem('barnacle_chat_history', JSON.stringify(chatHistory.slice(-50)));
+            renderMessages();
+        }
+
+        function addUserMessage(text) {
+            chatHistory.push({ role: 'user', text });
+            localStorage.setItem('barnacle_chat_history', JSON.stringify(chatHistory.slice(-50)));
+            renderMessages();
+        }
+
+        function showTyping() {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.id = 'typing';
+            div.className = 'mb-3 flex justify-start';
+            div.innerHTML = '<div class="msg-barnacle p-4"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removeTyping() {
+            const t = document.getElementById('typing');
+            if (t) t.remove();
+        }
+
+        async function sendMessage() {
+            if (isChatLoading) return;
+            const now = Date.now();
+            if (now - lastMessageTime < RATE_LIMIT_MS) return;
+
+            const input = document.getElementById('userInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            lastMessageTime = now;
+            isChatLoading = true;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('sendText').textContent = '...';
+
+            addUserMessage(text);
+            showTyping();
+
+            try {
+                const recentHistory = chatHistory.slice(-6).map(m => ({
+                    role: m.role === 'user' ? 'user' : 'model',
+                    text: m.text
+                }));
+
+                const response = await fetch('/.netlify/functions/chat-barnacle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: text, history: recentHistory })
+                });
+
+                removeTyping();
+
+                const data = await response.json();
+                if (data.reply) {
+                    addBarnacleMessage(data.reply);
+                } else {
+                    addBarnacleMessage("Sorry, I got a bit tangled in my nets there. Ask me again?");
+                }
+            } catch (err) {
+                removeTyping();
+                addBarnacleMessage("Something went wrong \u2014 might be your connection. Give it another go in a sec.");
+            }
+
+            isChatLoading = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('sendText').textContent = '🐟';
+        }
+
+        function clearChat() {
+            if (!confirm('Clear chat history?')) return;
+            chatHistory = [];
+            localStorage.removeItem('barnacle_chat_history');
+            renderMessages();
+            addBarnacleMessage("Fresh start! Right then, what can I help you with?");
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Q&A ACCORDION
+        function toggleQA(item) {
+            const answer = item.querySelector('.qa-answer');
+            const icon = item.querySelector('.qa-question span:last-child');
+            if (!answer) return;
+            const isOpen = answer.classList.contains('open');
+
+            document.querySelectorAll('.qa-answer').forEach(a => a.classList.remove('open'));
+            document.querySelectorAll('.qa-question span:last-child').forEach(s => { if (s.textContent === '\u2212') s.textContent = '+'; });
+
+            if (!isOpen) {
+                answer.classList.add('open');
+                if (icon) icon.textContent = '\u2212';
+            }
+        }
+
+        // SECTION REVEAL ON SCROLL
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.section-fade').forEach(el => observer.observe(el));
+
+        // DOT NAV ACTIVE STATE
+        const dotNavLinks = document.querySelectorAll('.dot-nav a');
+        const sections = document.querySelectorAll('[id^="page"]');
+
+        const dotObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    dotNavLinks.forEach(link => link.classList.remove('active'));
+                    const activeLink = document.querySelector('.dot-nav a[href="#' + entry.target.id + '"]');
+                    if (activeLink) activeLink.classList.add('active');
+                }
+            });
+        }, { threshold: 0.3 });
+
+        sections.forEach(section => dotObserver.observe(section));
+
+        // INIT
+        window.onload = function() {
+            checkAgeVerification();
+            checkUser();
+            loadRecentActivity();
+            loadBroadcast();
+            initChat();
+        };
+
+        // Referral code
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        if (refCode) localStorage.setItem('referredBy', refCode);
+    </script>
+</body>
+</html>

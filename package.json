@@ -1,0 +1,12 @@
+{
+  "name": "fish-oid",
+  "version": "1.0.0",
+  "description": "Fish-Oid - The Fishing & Hunting AI",
+  "main": "index.html",
+  "scripts": {
+    "start": "netlify dev"
+  },
+  "keywords": ["fishing", "hunting", "ai", "identification"],
+  "author": "FeelFamous",
+  "license": "ISC"
+}
