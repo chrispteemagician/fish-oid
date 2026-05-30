@@ -222,9 +222,35 @@
             *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
         }
         :focus-visible { outline: 2px solid var(--highlight); outline-offset: 2px; }
+    
+        /* MARY JANE BERLIN BANNER */
+        .mjb-banner {
+            background: linear-gradient(90deg, #b87a00 0%, #e05a00 100%);
+            color: #fff;
+            text-align: center;
+            padding: .7rem 1rem;
+            font-size: clamp(.8rem, 2vw, 1rem);
+            font-weight: 700;
+            line-height: 1.4;
+            position: relative;
+            z-index: 199;
+        }
+        .mjb-banner a {
+            color: #fff;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .mjb-banner a:hover { opacity: .85; }
     </style>
 </head>
 <body>
+
+<!-- MARY JANE BERLIN BANNER -->
+<div class="mjb-banner">
+    🌿 <strong>Doc Strange / Chris P Tee</strong> — Prescribed MC Patient &amp; Legal Cannabis Advocate — See me at <strong>Mary Jane Berlin, June 11–14</strong>. Built this for people like me.&nbsp;
+    <a href="https://cannabin-oid.co.uk">Visit cannabin-oid.co.uk →</a>
+</div>
+
 
     <!-- Skip to content -->
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-cyan-600 text-white px-4 py-2 rounded z-50">Skip to main content</a>
