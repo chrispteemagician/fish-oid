@@ -1,0 +1,30 @@
+# Fish-Oid
+
+> Free AI-powered identification tool for fishing, hunting, and marine life. Wrapped inside The Harbour Village — a learning hub plus a community layer.
+
+## Pages
+
+- [The Harbour Village](https://fish-oid.co.uk/): identify/roast a catch, gear, or game; Learn (tides, fish ID tips, conservation); Q&A; Ask Captain Barnacle; Gear; Village (kudos, leaderboard, activity feed)
+
+## What it does
+
+- **Identify / Roast** (`analyze-image.js`, free, no sign-in): upload a photo — Fish-Oid (character voice: Dave the Rave) identifies your catch, gear, or game, or roasts it.
+- **Ask Captain Barnacle** (`chat-barnacle.js`, free, no sign-in): a retired North Sea trawlerman turned marine biologist answers questions about fish ID, tackle, or the sea.
+- **The Village**: a Supabase-backed community layer (kudos, leaderboard, activity feed). Signing in is Supabase email/password, not Patreon, and unlocks kudos/tracking/village features — never the identify, roast, or chat tools, which work and show a result before any sign-in prompt.
+
+## Who it's for
+
+Anglers, hunters, and anyone curious about marine life who wants a fast identification or a chat with someone who knows the sea.
+
+## Tech
+
+Gemini 2.0 Flash (identify/roast) and Gemini 2.5 Flash (Ask Captain Barnacle) · Supabase · Netlify Functions
+
+## Membership (informational only — no feature on this site is gated behind it)
+
+Villager £4.95/month · Elder earned, not bought · Founder £14.95/month — patreon.com/chrisptee
+
+## Part of the FeelFamous ecosystem
+
+Built by Chris P Taylor (Doc Strange). Free to use, always will be — buy-me-a-coffee.com/chrispteemagician if you want to say thanks, Patreon if you want to be a regular.
+Contact: chris@chrisptee.co.uk

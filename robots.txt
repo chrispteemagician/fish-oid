@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fish-oid.co.uk/sitemap.xml
