@@ -4,7 +4,7 @@
 
 ## Pages
 
-- [The Harbour Village](https://fish-oid.co.uk/): identify/roast a catch, gear, or game; Learn (tides, fish ID tips, conservation); Q&A; Ask Captain Barnacle; Gear; Village (kudos, leaderboard, activity feed)
+- [The Harbour Village](https://fish-oid.netlify.app/): identify/roast a catch, gear, or game; Learn (tides, fish ID tips, conservation); Q&A; Ask Captain Barnacle; Gear; Village (kudos, leaderboard, activity feed)
 
 ## What it does
 

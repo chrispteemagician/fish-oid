@@ -15,8 +15,13 @@ activity feed).
 
 Part of the FeelFamous -Oid Ecosystem.
 
-**Live at:** fish-oid.co.uk (check Netlify site settings for the actual
-deployed domain if this has changed)
+**Live at:** fish-oid.netlify.app — confirmed 2026-08-18 against the real
+Netlify project record (`get-project` on site ID `935617af-...`); no
+`.co.uk` custom domain is attached, despite this file previously saying
+`fish-oid.co.uk`. Don't reintroduce `fish-oid.co.uk` in canonical tags,
+meta/OG tags, robots.txt/sitemap.xml, share text, or cross-links elsewhere
+in the ecosystem until a real `.co.uk` domain is actually attached in
+Netlify.
 
 ---
 

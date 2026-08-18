@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>The Harbour Village | Fish-Oid — Captain Barnacle's Marine World</title>
     <meta name="description" content="Captain Barnacle's Harbour Village. Marine biology meets fishing wisdom. Identify fish, learn the sea, ask anything. Free forever.">
-    <link rel="canonical" href="https://fish-oid.co.uk/">
+    <link rel="canonical" href="https://fish-oid.netlify.app/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Fish-Oid">
     <meta property="og:title" content="The Harbour Village | Fish-Oid — Captain Barnacle's Marine World">
     <meta property="og:description" content="Free AI identification for fishing, hunting, and marine life. Upload a photo — Fish-Oid identifies your catch, gear, or game, or roasts it. Ask Captain Barnacle anything about fish ID, tackle, or the sea.">
-    <meta property="og:url" content="https://fish-oid.co.uk/">
+    <meta property="og:url" content="https://fish-oid.netlify.app/">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="The Harbour Village | Fish-Oid — Captain Barnacle's Marine World">
     <meta name="twitter:description" content="Free AI identification for fishing, hunting, and marine life. Upload a photo — Fish-Oid identifies your catch, gear, or game, or roasts it. Ask Captain Barnacle anything about fish ID, tackle, or the sea.">
@@ -19,7 +19,7 @@
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "Fish-Oid",
-      "url": "https://fish-oid.co.uk/",
+      "url": "https://fish-oid.netlify.app/",
       "description": "Free AI-powered identification tool for fishing, hunting, and marine life. Upload a photo and Fish-Oid identifies your catch, gear, or game, or roasts it. Ask Captain Barnacle anything about fish ID, tackle, or the sea.",
       "applicationCategory": "LifestyleApplication",
       "operatingSystem": "Any",
@@ -950,7 +950,7 @@
                     <span class="text-2xl">💿</span>
                     <span class="block text-xs font-semibold text-purple-400 mt-1">Vinyl-Oid</span>
                 </a>
-                <a href="https://coin-oid.co.uk" class="bg-cyan-900/30 hover:bg-yellow-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
+                <a href="https://coin-oid.netlify.app" class="bg-cyan-900/30 hover:bg-yellow-900/30 border border-cyan-800/30 rounded-xl p-3 text-center transition">
                     <span class="text-2xl">🪙</span>
                     <span class="block text-xs font-semibold text-yellow-400 mt-1">Coin-Oid</span>
                 </a>
@@ -1678,7 +1678,7 @@
 
                 ctx.fillStyle = '#fbbf24';
                 ctx.font = 'bold 32px Outfit, sans-serif';
-                ctx.fillText('fish-oid.co.uk', canvas.width / 2, canvas.height - 80);
+                ctx.fillText('fish-oid.netlify.app', canvas.width / 2, canvas.height - 80);
 
                 if (navigator.share && navigator.canShare) {
                     try {
@@ -1687,7 +1687,7 @@
                         if (navigator.canShare({ files: [file] })) {
                             await navigator.share({
                                 title: currentResult.title || 'Fish-Oid Result',
-                                text: 'Check out what Fish-Oid identified! fish-oid.co.uk',
+                                text: 'Check out what Fish-Oid identified! fish-oid.netlify.app',
                                 files: [file]
                             });
                             return;
@@ -1697,10 +1697,10 @@
                     }
                 }
                 try {
-                    await navigator.clipboard.writeText('Check out Fish-Oid - AI marine identification! fish-oid.co.uk');
+                    await navigator.clipboard.writeText('Check out Fish-Oid - AI marine identification! fish-oid.netlify.app');
                     alert('Link copied! Share it on the quayside.');
                 } catch (e) {
-                    alert('Share: fish-oid.co.uk');
+                    alert('Share: fish-oid.netlify.app');
                 }
             };
             img.src = currentResult.image;
@@ -1744,7 +1744,7 @@
 
                 ctx.fillStyle = '#fbbf24';
                 ctx.font = 'bold 32px Outfit, sans-serif';
-                ctx.fillText('fish-oid.co.uk', canvas.width / 2, canvas.height - 80);
+                ctx.fillText('fish-oid.netlify.app', canvas.width / 2, canvas.height - 80);
 
                 const link = document.createElement('a');
                 link.download = 'fish-oid-result.png';
